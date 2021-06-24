@@ -1,5 +1,7 @@
 use std::fs;
-use std::{io, io::{Read, BufReader, BufRead}};
+use std::io::Read;
+
+mod key;
 
 // Command line arguments
 #[derive(Debug)]
@@ -8,16 +10,21 @@ struct Args {
     file: Option<String>,
 }
 impl Args {
-    fn parse() -> Result<Self, pico_args::Error> {
+    fn parse() -> Result<Self, String> {
         let mut pargs = pico_args::Arguments::from_env();
         let args = Self {
-            key: pargs.opt_free_from_str()?.unwrap_or(String::new()),
-            file: pargs.opt_free_from_str()?,
+            key: match pargs.free_from_str() {
+                Ok(s) => s,
+                Err(_) => return Err(String::from("Arguments Err: Missing key string")),
+            },
+            file: match pargs.opt_free_from_str() {
+                Ok(s) => s,
+                Err(_) => None,
+            }
         };
         let remaining = pargs.finish();
         if !remaining.is_empty() {
-            eprintln!("Unused argument {:?}", remaining[0]);
-            std::process::exit(1);
+            return Err(format!("Unused argument {:?}", remaining[0]));
         }
         Ok(args)
     }
@@ -27,7 +34,7 @@ fn main() -> Result<(), std::io::Error> {
     let args = match Args::parse() {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("Arguments Error: {}.", e);
+            eprintln!("{}", e);
             std::process::exit(1);
         }
     };
@@ -47,35 +54,32 @@ fn main() -> Result<(), std::io::Error> {
             }
         },
         None => {
-            let mut buf = BufReader::new(io::stdin());
-            let mut contents = String::new();
-            buf.fill_buf()?;
-            buf.read_to_string(&mut contents)?;
-            toml::from_str(&contents)?
+            //let stdin = io::stdin();
+            //for line in stdin.lock().lines() {
+                //let line = line.expect("Could not read line from standard in");
+                //println!("{}", line);
+            //}
+            eprintln!("Error: No toml to parse");
+            std::process::exit(1);
         },
     };
 
-    // Fold key to get requested values
-    let mut i = 0;
-    let mut current = &toml;
-    for s in args.key.split(".") {
-        if s == "" {
-            if i != 0 {
-                eprintln!("Invalid key '..'");
-                std::process::exit(1);
-            }
-            i -= 1;
-        } else {
-            current = match current.get(s) {
-                Some(v) => v,
-                None => {
-                    eprintln!("Invalid key '{}'", s);
-                    std::process::exit(1);
-                },
-            };
+    // Parse key arguements
+    let keys = match key::KeyPattern::parse(&args.key) {
+        Ok(k) => k,
+        Err(e) => {
+            eprintln!("Invalid key '{}'", e);
+            std::process::exit(1);
         }
-        i += 1;
-    }
+    };
+    // Get value to print
+    let current = match keys.find(&toml) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Unknown key '{}'", e);
+            std::process::exit(1);
+        }
+    };
 
     // Print results
     let output = match current {

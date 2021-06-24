@@ -1,0 +1,7 @@
+[table]
+int = 2
+float = 5.8
+str = "testing"
+bool = true
+date = 2021-06-15
+array = [1, 2, 3, 4]
