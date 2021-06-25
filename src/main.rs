@@ -1,4 +1,5 @@
 use std::fs;
+use std::process;
 use std::io::Read;
 
 mod key;
@@ -15,7 +16,7 @@ impl Args {
         let args = Self {
             key: match pargs.free_from_str() {
                 Ok(s) => s,
-                Err(_) => return Err(String::from("Arguments Err: Missing key string")),
+                Err(_) => return Err(String::from("Missing Argument: TOML Key")),
             },
             file: match pargs.opt_free_from_str() {
                 Ok(s) => s,
@@ -24,7 +25,7 @@ impl Args {
         };
         let remaining = pargs.finish();
         if !remaining.is_empty() {
-            return Err(format!("Unused argument {:?}", remaining[0]));
+            return Err(format!("Unused Argument: '{:?}'", remaining[0]));
         }
         Ok(args)
     }
@@ -35,7 +36,7 @@ fn main() -> Result<(), std::io::Error> {
         Ok(a) => a,
         Err(e) => {
             eprintln!("{}", e);
-            std::process::exit(1);
+            process::exit(1);
         }
     };
 
@@ -49,7 +50,7 @@ fn main() -> Result<(), std::io::Error> {
                 Ok(t) => t,
                 Err(e) => {
                     eprintln!("TOML Error: {}", e);
-                    std::process::exit(1);
+                    process::exit(1);
                 },
             }
         },
@@ -59,8 +60,8 @@ fn main() -> Result<(), std::io::Error> {
                 //let line = line.expect("Could not read line from standard in");
                 //println!("{}", line);
             //}
-            eprintln!("Error: No toml to parse");
-            std::process::exit(1);
+            eprintln!("TOML Error: No toml to parse");
+            process::exit(1);
         },
     };
 
@@ -68,16 +69,16 @@ fn main() -> Result<(), std::io::Error> {
     let keys = match key::KeyPattern::parse(&args.key) {
         Ok(k) => k,
         Err(e) => {
-            eprintln!("Invalid key '{}'", e);
-            std::process::exit(1);
+            eprintln!("{}", e);
+            process::exit(1);
         }
     };
     // Get value to print
     let current = match keys.find(&toml) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Unknown key '{}'", e);
-            std::process::exit(1);
+            eprintln!("Unknown Key: '{}'", e);
+            process::exit(1);
         }
     };
 
@@ -86,15 +87,15 @@ fn main() -> Result<(), std::io::Error> {
         toml::Value::Table(t) => match toml::to_string_pretty(t) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Formatting: {}", e);
-                std::process::exit(1);
+                eprintln!("Formatting Error: {}", e);
+                process::exit(1);
             },
         },
         toml::Value::Array(a) => match toml::to_string_pretty(a) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Formatting: {}", e);
-                std::process::exit(1);
+                eprintln!("Formatting Error: {}", e);
+                process::exit(1);
             },
         },
         toml::Value::String(s) => s.to_string(),

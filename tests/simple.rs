@@ -6,7 +6,7 @@ use std::process::Command;
 fn no_args() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("tq")?;
     cmd.assert().failure().stderr(
-        predicates::str::contains("Missing key string"));
+        predicates::str::contains("Missing Argument"));
     Ok(())
 }
 #[test]
