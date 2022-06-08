@@ -1,13 +1,13 @@
 [package]
 name = "tq"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Penn Bauman <pennbauman@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
 toml = "0.5"
-pico-args = "0.4"
+pico-args = "0.5"
 
 [dev-dependencies]
-assert_cmd = "1.0"
-predicates = "1.0"
+assert_cmd = "2.0"
+predicates = "2.1"
